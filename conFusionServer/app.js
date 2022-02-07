@@ -21,6 +21,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+/*
+https://stackoverflow.com/questions/48225408/set-home-page-in-express
+The home page is rendered as part of the express.static middleware default options.
+
+To disable this logic, set express.static(..., { index: false }).
+
+If you want to change the file served as a home page, set express.static(..., { index: 'yourfile.html' }).
+
+What this option does, in fact, is attempt to serve an index page with given file name for each directory in your public folder, 
+so if you have public/foo/index.html then it will get served when requesting /foo/ path.
+*/
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
