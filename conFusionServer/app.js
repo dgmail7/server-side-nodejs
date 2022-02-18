@@ -35,36 +35,22 @@ app.use(session({
   store: new FileStore()
 }))
 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 function auth(req, res, next) {
   console.log(req.session)
   if (!req.session.user) {
-    var authHeader = req.headers.authorization
-    if (!authHeader) {
       let err = new Error('You are not authenticated!')
-      res.setHeader('WWW-Authenticate', 'Basic')
       err.status = 401
-      next(err)
-    }
-    var info = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':')
-    var username = info[0]
-    var password = info[1]
-    if (username === 'admin' && password === 'password') {
-      req.session.user = 'admin'
-      next()
-    } else {
-      let err = new Error('You are not authenticated!')
-      res.setHeader('WWW-Authenticate', 'Basic')
-      err.status = 401
-      next(err)
-    }
+      return next(err)
   } else {
-    if (req.session.user === 'admin') {
+    if (req.session.user === 'authenticated') {
       next()
     } else {
       // normally this would not happen, because the cookie is already set on client
       let err = new Error('You are not authenticated!')
-
-      err.status = 401
+      err.status = 403
       next(err)      
     }
   }
@@ -84,8 +70,6 @@ What this option does, in fact, is attempt to serve an index page with given fil
 so if you have public/foo/index.html then it will get served when requesting /foo/ path.
 */
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes', dishRouter)
 app.use('/promotions', promoRouter)
 app.use('/leaders', leaderRouter)
