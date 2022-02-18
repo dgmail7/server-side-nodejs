@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session = require('express-session')
+var FileStore = require('session-file-store')(session)
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -11,7 +13,6 @@ var promoRouter = require('./routes/promotionRouter')
 var leaderRouter = require('./routes/leaderRouter')
 
 const mongoose = require('mongoose')
-const Dishes = require('./models/dishes')
 const url = 'mongodb://localhost:27017/conFusion'
 const connect = mongoose.connect(url)
 connect.then(db => {
@@ -27,11 +28,16 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('a secret key 123'));
+app.use(session({
+  name: 'session-id',
+  secret: 'a secret key 123',
+  saveUninitialized: false,
+  store: new FileStore()
+}))
 
 function auth(req, res, next) {
-  console.log(req.signedCookies)
-  if (!req.signedCookies.user) {
+  console.log(req.session)
+  if (!req.session.user) {
     var authHeader = req.headers.authorization
     if (!authHeader) {
       let err = new Error('You are not authenticated!')
@@ -43,7 +49,7 @@ function auth(req, res, next) {
     var username = info[0]
     var password = info[1]
     if (username === 'admin' && password === 'password') {
-      res.cookie('user', 'admin', {signed: true})
+      req.session.user = 'admin'
       next()
     } else {
       let err = new Error('You are not authenticated!')
@@ -52,12 +58,12 @@ function auth(req, res, next) {
       next(err)
     }
   } else {
-    if (req.signedCookies.user === 'admin') {
+    if (req.session.user === 'admin') {
       next()
     } else {
       // normally this would not happen, because the cookie is already set on client
       let err = new Error('You are not authenticated!')
-      res.setHeader('WWW-Authenticate', 'Basic')
+
       err.status = 401
       next(err)      
     }
